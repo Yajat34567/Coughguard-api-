@@ -1,0 +1,40 @@
+
+from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
+import os
+
+app = Flask(__name__)
+UPLOAD_FOLDER = 'static'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/')
+def home():
+    return "CoughGuard AI API is live!"
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file'}), 400
+    file = request.files['audio']
+    filename = secure_filename(file.filename)
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(path)
+    public_url = request.url_root + 'static/' + filename
+    return jsonify({"audio_url": public_url})
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    data = request.get_json()
+    audio_url = data.get("audio_url")
+    
+    if not audio_url:
+        return jsonify({'error': 'No audio_url provided'}), 400
+
+    # Dummy analysis - replace with Whisper later
+    if "cough" in audio_url.lower():
+        result = "Mild cold symptoms detected"
+    else:
+        result = "No cough detected"
+
+    return jsonify({"possible_condition": result})
